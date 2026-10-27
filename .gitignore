@@ -1,0 +1,11 @@
+images
+images_flipped
+logs
+models
+videos
+results
+*.log
+.env
+.env.local
+.vscode
+__pycache__

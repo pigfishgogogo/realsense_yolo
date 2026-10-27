@@ -35,7 +35,7 @@ except ImportError as e:
 
 from camera_common import device_name_prefix, enable_device_by_serial, log_frame_size, print_device_summary
 
-DEFAULT_SAVE_DIR = Path("/home/byd/Desktop/yolo_onnx_test/videos")
+DEFAULT_SAVE_DIR = Path(__file__).resolve().parent.parent / "videos"
 
 
 def parse_args():

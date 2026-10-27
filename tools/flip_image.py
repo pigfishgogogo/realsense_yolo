@@ -4,8 +4,8 @@
 
 用法(在项目根目录执行):
     python tools/flip_image.py --input images/test.jpg          # 单张
-    python tools/flip_image.py --input images/                  # 整个目录批量处理
-    python tools/flip_image.py --input images/ --output flipped/ --suffix _vflip
+    python tools/flip_image.py --input images/                  # 整个目录批量处理, 结果存 images/images_flipped/
+    python tools/flip_image.py --input images/ --output images/xxx/ --suffix _vflip
 """
 
 import argparse
@@ -22,7 +22,7 @@ def parse_args():
     parser = argparse.ArgumentParser(description="图片上下翻转")
     parser.add_argument("--input", required=True, help="图片路径或图片目录")
     parser.add_argument("--output", default=None,
-                        help="结果保存目录 (默认: 单张存原图同目录, 目录批处理存 <input>_flipped/)")
+                        help="结果保存目录 (默认: 单张存原图同目录, 目录批处理存 <input>/<input名>_flipped/)")
     parser.add_argument("--suffix", default="_flipped", help="输出文件名后缀 (默认: _flipped)")
     return parser.parse_args()
 
@@ -55,7 +55,7 @@ def main():
     if args.output:
         save_dir = Path(args.output)
     elif input_path.is_dir():
-        save_dir = input_path.parent / f"{input_path.name}_flipped"
+        save_dir = input_path / f"{input_path.name}_flipped"
     else:
         save_dir = input_path.parent
     save_dir.mkdir(parents=True, exist_ok=True)

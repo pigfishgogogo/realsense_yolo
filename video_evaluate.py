@@ -25,7 +25,7 @@ from pathlib import Path
 
 import cv2
 
-from yolo_detector import YoloOnnxDetector, load_names, log_detections, setup_logger
+from yolo_detector import create_yolo_detector, load_names, log_detections, setup_logger
 
 
 def parse_args():
@@ -42,6 +42,7 @@ def parse_args():
     parser.add_argument("--show", action="store_true", help="实时显示检测画面 (按 q 提前结束)")
     parser.add_argument("--log", default="logs/video_detect.log", help="日志文件路径 (默认: logs/video_detect.log)")
     parser.add_argument("--names", default=None, help="类别名文件，每行一个 (默认使用 COCO 80 类)")
+    parser.add_argument("--obb", default=None, action="store_true", help="强制按 OBB 模型解析输出 (自动判断失败时使用)")
     parser.add_argument("--tensorrt", action="store_true", help="启用 TensorRT 执行器 (需已安装 TensorRT 库)")
     parser.add_argument("--no-warmup", action="store_true", help="跳过预热 (第一帧的耗时会包含GPU初始化开销)")
     return parser.parse_args()
@@ -94,10 +95,10 @@ def main():
     log.info("源信息: %dx%d @ %.1f fps%s", width, height, fps,
              f", 共 {total_frames} 帧" if total_frames > 0 else "")
 
-    detector = YoloOnnxDetector(
+    detector = create_yolo_detector(
         model_path, imgsz=args.imgsz, conf=args.conf, iou=args.iou,
         names=load_names(args.names), tensorrt=args.tensorrt,
-        warmup=not args.no_warmup, logger=log,
+        warmup=not args.no_warmup, logger=log, obb=args.obb,
     )
 
     # 输出视频: 摄像头实时源用时间戳命名, 文件源加 _detected 后缀

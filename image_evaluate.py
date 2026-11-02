@@ -19,7 +19,7 @@ from pathlib import Path
 
 import cv2
 
-from yolo_detector import IMG_EXTS, YoloOnnxDetector, load_names, log_detections, setup_logger
+from yolo_detector import IMG_EXTS, create_yolo_detector, load_names, log_detections, setup_logger
 
 
 def parse_args():
@@ -32,6 +32,7 @@ def parse_args():
     parser.add_argument("--output", default="results", help="效果图保存目录 (默认: results)")
     parser.add_argument("--log", default="logs/detect.log", help="日志文件路径 (默认: logs/detect.log)")
     parser.add_argument("--names", default=None, help="类别名文件，每行一个 (默认使用 COCO 80 类)")
+    parser.add_argument("--obb", default=None, action="store_true", help="强制按 OBB 模型解析输出 (自动判断失败时使用)")
     parser.add_argument("--tensorrt", action="store_true", help="启用 TensorRT 执行器 (需已安装 TensorRT 库)")
     parser.add_argument("--no-warmup", action="store_true", help="跳过预热 (第一张图的耗时会包含GPU初始化开销)")
     return parser.parse_args()
@@ -65,10 +66,10 @@ def main():
         sys.exit(1)
     log.info("使用模型: %s", model_path)
 
-    detector = YoloOnnxDetector(
+    detector = create_yolo_detector(
         model_path, imgsz=args.imgsz, conf=args.conf, iou=args.iou,
         names=load_names(args.names), tensorrt=args.tensorrt,
-        warmup=not args.no_warmup, logger=log,
+        warmup=not args.no_warmup, logger=log, obb=args.obb,
     )
 
     images = collect_images(args.images)

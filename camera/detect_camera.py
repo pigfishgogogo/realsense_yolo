@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 """
-D455 相机 YOLOv8 ONNX 实时检测脚本
+D455 相机 YOLOv8 ONNX 实时检测脚本 (支持 HBB / OBB)
 
 优先使用 pyrealsense2 读取 D455; 未安装时回退到 cv2.VideoCapture 普通摄像头。
 画面实时显示检测框, 日志每秒汇总一次帧率/耗时/检出数。
@@ -10,6 +10,8 @@ D455 相机 YOLOv8 ONNX 实时检测脚本
     python camera/detect_camera.py --serial 260322276473    # 多相机时按序列号指定相机
     python camera/detect_camera.py --save                   # 同时保存检测视频到 results/
     python camera/detect_camera.py --conf 0.5 --index 2     # 指定置信度 / 摄像头序号
+    python camera/detect_camera.py --model models/phone26n-obb.onnx \
+                                   --names models/phone.names --conf 0.7
 
 按键:
     s 或 空格 : 保存当前检测画面截图到 images/
@@ -30,7 +32,7 @@ import cv2
 
 # 引入项目根目录下的 yolo_detector 和本目录的 camera_common
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
-from yolo_detector import YoloOnnxDetector, load_names, setup_logger
+from yolo_detector import create_yolo_detector, load_names, setup_logger
 from camera_common import enable_device_by_serial, log_device_info, log_frame_size
 
 try:
@@ -58,6 +60,7 @@ def parse_args():
     parser.add_argument("--headless", action="store_true", help="不显示窗口 (后台运行)")
     parser.add_argument("--log", default="logs/camera_detect.log", help="日志文件路径 (默认: logs/camera_detect.log)")
     parser.add_argument("--names", default=None, help="类别名文件，每行一个 (默认使用 COCO 80 类)")
+    parser.add_argument("--obb", default=None, action="store_true", help="强制按 OBB 模型解析输出 (自动判断失败时使用)")
     parser.add_argument("--tensorrt", action="store_true", help="启用 TensorRT 执行器 (需已安装 TensorRT 库)")
     parser.add_argument("--no-warmup", action="store_true", help="跳过预热")
     return parser.parse_args()
@@ -134,10 +137,10 @@ def main():
         sys.exit(1)
     log.info("使用模型: %s", model_path)
 
-    detector = YoloOnnxDetector(
+    detector = create_yolo_detector(
         model_path, imgsz=args.imgsz, conf=args.conf, iou=args.iou,
         names=load_names(args.names), tensorrt=args.tensorrt,
-        warmup=not args.no_warmup, logger=log,
+        warmup=not args.no_warmup, logger=log, obb=args.obb,
     )
 
     source = FrameSource(args, log)

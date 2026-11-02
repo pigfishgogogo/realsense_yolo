@@ -1,0 +1,3 @@
+[submodule "train_pipeline/fast-reid"]
+	path = train_pipeline/fast-reid
+	url = https://github.com/JDAI-CV/fast-reid

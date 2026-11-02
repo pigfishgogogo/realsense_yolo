@@ -1,17 +1,34 @@
-images
-images_flipped
-logs
-models
-videos
-results
+# ---- 通用 ----
 *.log
 .env
 .env.local
 .vscode
+__pycache__
+
+# ---- 模型权重与产物（不进 git，另行分发） ----
 *.onnx
 *.pt
+*.pth
+*.whl
+models
+model_pt
+model_onnx
+model_fast-reid
+weights
+
+# ---- 数据与输出 ----
+images
+images_flipped
+videos
+results
+logs
+# 数据集：数据/标注/缓存文件忽略，仅保留 data.yaml/classes.txt 配置入库
+**/datasets/**/*.txt
+**/datasets/**/*.json
+**/datasets/**/*.cache
+!**/datasets/**/classes.txt
+runs
 *.jpg
 *.jpeg
 *.png
 *.mp4
-__pycache__

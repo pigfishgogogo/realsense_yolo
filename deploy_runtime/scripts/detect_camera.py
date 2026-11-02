@@ -1,16 +1,16 @@
 # -*- coding: utf-8 -*-
 """
-D455 相机 YOLOv8 ONNX 实时检测脚本 (支持 HBB / OBB)
+RealSense 相机 YOLOv8 ONNX 实时检测脚本 (支持 HBB / OBB)
 
-优先使用 pyrealsense2 读取 D455; 未安装时回退到 cv2.VideoCapture 普通摄像头。
+优先使用 pyrealsense2 读取 RealSense 相机; 未安装时回退到 cv2.VideoCapture 普通摄像头。
 画面实时显示检测框, 日志每秒汇总一次帧率/耗时/检出数。
 
 用法(在项目根目录执行):
-    python camera/detect_camera.py                          # 实时检测显示
-    python camera/detect_camera.py --serial 260322276473    # 多相机时按序列号指定相机
-    python camera/detect_camera.py --save                   # 同时保存检测视频到 results/
-    python camera/detect_camera.py --conf 0.5 --index 2     # 指定置信度 / 摄像头序号
-    python camera/detect_camera.py --model models/phone26n-obb.onnx \
+    python scripts/detect_camera.py                          # 实时检测显示
+    python scripts/detect_camera.py --serial 260322276473    # 多相机时按序列号指定相机
+    python scripts/detect_camera.py --save                   # 同时保存检测视频到 results/
+    python scripts/detect_camera.py --conf 0.5 --index 2     # 指定置信度 / 摄像头序号
+    python scripts/detect_camera.py --model models/phone26n-obb.onnx \
                                    --names models/phone.names --conf 0.7
 
 按键:
@@ -30,9 +30,9 @@ from pathlib import Path
 
 import cv2
 
-# 引入项目根目录下的 yolo_detector 和本目录的 camera_common
-sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
-from yolo_detector import create_yolo_detector, load_names, setup_logger
+sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
+from deploy_runtime.inference import create_yolo_detector, load_names, pick_model, setup_logger
+from _common_args import add_detector_args
 from camera_common import enable_device_by_serial, log_device_info, log_frame_size
 
 try:
@@ -43,12 +43,9 @@ except ImportError:
 
 
 def parse_args():
-    parser = argparse.ArgumentParser(description="D455 相机实时 YOLOv8 检测")
-    parser.add_argument("--model", default=None, help="ONNX 模型路径 (默认取 models/ 下第一个 .onnx)")
+    parser = argparse.ArgumentParser(description="RealSense 相机实时 YOLOv8 检测")
+    add_detector_args(parser, log_default="logs/camera_detect.log")
     parser.add_argument("--index", type=int, default=0, help="cv2 摄像头序号 (默认: 0, 仅在无 pyrealsense2 时生效)")
-    parser.add_argument("--conf", type=float, default=0.25, help="置信度阈值 (默认: 0.25)")
-    parser.add_argument("--iou", type=float, default=0.45, help="NMS IOU 阈值 (默认: 0.45)")
-    parser.add_argument("--imgsz", type=int, default=None, help="模型输入尺寸 (默认取模型自身尺寸)")
     parser.add_argument("--width", type=int, default=1280, help="相机图像宽度 (默认: 1280)")
     parser.add_argument("--height", type=int, default=720, help="相机图像高度 (默认: 720)")
     parser.add_argument("--fps", type=int, default=30, help="相机帧率 (默认: 30)")
@@ -58,25 +55,11 @@ def parse_args():
     parser.add_argument("--snap-dir", default="images", help="截图保存目录 (默认: images)")
     parser.add_argument("--max-frames", type=int, default=0, help="处理 N 帧后自动退出, 0 不限制 (默认: 0)")
     parser.add_argument("--headless", action="store_true", help="不显示窗口 (后台运行)")
-    parser.add_argument("--log", default="logs/camera_detect.log", help="日志文件路径 (默认: logs/camera_detect.log)")
-    parser.add_argument("--names", default=None, help="类别名文件，每行一个 (默认使用 COCO 80 类)")
-    parser.add_argument("--obb", default=None, action="store_true", help="强制按 OBB 模型解析输出 (自动判断失败时使用)")
-    parser.add_argument("--tensorrt", action="store_true", help="启用 TensorRT 执行器 (需已安装 TensorRT 库)")
-    parser.add_argument("--no-warmup", action="store_true", help="跳过预热")
     return parser.parse_args()
 
 
-def pick_model(model_arg):
-    if model_arg:
-        return Path(model_arg)
-    candidates = sorted(Path("models").glob("*.onnx"))
-    if not candidates:
-        return None
-    return candidates[0]
-
-
 class FrameSource:
-    """统一帧来源: 优先 RealSense D455, 回退 cv2.VideoCapture"""
+    """统一帧来源: 优先 RealSense, 回退 cv2.VideoCapture"""
 
     def __init__(self, args, log):
         self.log = log
@@ -93,7 +76,7 @@ class FrameSource:
                 profile = self.pipeline.start(config)
             except RuntimeError as e:
                 log.error("相机启动失败: %s", e)
-                log.error("请检查 D455 是否已连接，以及当前用户是否有 udev 权限")
+                log.error("请检查相机是否已连接，以及当前用户是否有 udev 权限")
                 sys.exit(1)
             log_device_info(profile, log)
             self.width, self.height, self.fps = args.width, args.height, args.fps
@@ -221,7 +204,8 @@ def main():
         if writer is not None:
             writer.release()
             log.info("检测视频已保存: %s", out_path)
-        cv2.destroyAllWindows()
+        if not args.headless:
+            cv2.destroyAllWindows()
         wall = time.perf_counter() - t_start
         log.info("结束: 共处理 %d 帧, 用时 %.1f 秒 (%.1f fps)",
                  frame_total, wall, frame_total / max(wall, 1e-6))

@@ -1,17 +1,17 @@
 # -*- coding: utf-8 -*-
 """
-YOLOv8 ONNX 视频精度评估脚本 (基于 onnxruntime)
+YOLOv8 ONNX 视频批量检测脚本 (基于 onnxruntime)
 
 功能:
     - 对视频文件(或摄像头)逐帧运行 YOLOv8 ONNX 推理
     - 控制台 + 日志文件输出每帧的识别结果(类别/置信度/坐标)
     - 保存画框后的检测视频到 results 目录
 
-用法:
-    python video_evaluate.py --source test.mp4                      # 评估视频文件
-    python video_evaluate.py --source 0                             # 评估摄像头 (/dev/video0, D455 也可用)
-    python video_evaluate.py --source test.mp4 --stride 5           # 每 5 帧检测一次(中间帧复用最近结果)
-    python video_evaluate.py --source test.mp4 --max-frames 100     # 只评估前 100 帧
+用法(在项目根目录执行):
+    python scripts/detect_video.py --source test.mp4                      # 检测视频文件
+    python scripts/detect_video.py --source 0                             # 检测摄像头 (/dev/video0, D455 也可用)
+    python scripts/detect_video.py --source test.mp4 --stride 5           # 每 5 帧检测一次(中间帧复用最近结果)
+    python scripts/detect_video.py --source test.mp4 --max-frames 100     # 只处理前 100 帧
 
 说明:
     - 按 q 可提前结束 (配合 --show 显示窗口时)
@@ -25,26 +25,21 @@ from pathlib import Path
 
 import cv2
 
-from yolo_detector import create_yolo_detector, load_names, log_detections, setup_logger
+sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
+from deploy_runtime.inference import create_yolo_detector, load_names, log_detections, make_run_dir, pick_model, setup_logger
+from _common_args import add_detector_args
 
 
 def parse_args():
-    parser = argparse.ArgumentParser(description="YOLOv8 ONNX 视频精度评估")
-    parser.add_argument("--model", default=None, help="ONNX 模型路径 (默认取 models/ 下第一个 .onnx)")
+    parser = argparse.ArgumentParser(description="YOLOv8 ONNX 视频批量检测")
+    add_detector_args(parser, log_default="logs/video_detect.log")
     parser.add_argument("--source", required=True, help="视频文件路径或摄像头序号 (如 0 表示 /dev/video0)")
-    parser.add_argument("--conf", type=float, default=0.25, help="置信度阈值 (默认: 0.25)")
-    parser.add_argument("--iou", type=float, default=0.45, help="NMS IOU 阈值 (默认: 0.45)")
-    parser.add_argument("--imgsz", type=int, default=None, help="模型输入尺寸 (默认取模型自身尺寸)")
     parser.add_argument("--stride", type=int, default=1, help="每 N 帧做一次检测 (默认: 1, 每帧都检测)")
-    parser.add_argument("--output", default="results", help="检测视频保存目录 (默认: results)")
+    parser.add_argument("--output", default="results",
+                        help="检测视频保存根目录 (默认: results, 每次运行在其下新建时间戳子目录)")
     parser.add_argument("--fps", type=float, default=None, help="输出视频帧率 (默认取源视频帧率, 摄像头为 25)")
     parser.add_argument("--max-frames", type=int, default=0, help="最多处理帧数, 0 表示不限制 (默认: 0)")
     parser.add_argument("--show", action="store_true", help="实时显示检测画面 (按 q 提前结束)")
-    parser.add_argument("--log", default="logs/video_detect.log", help="日志文件路径 (默认: logs/video_detect.log)")
-    parser.add_argument("--names", default=None, help="类别名文件，每行一个 (默认使用 COCO 80 类)")
-    parser.add_argument("--obb", default=None, action="store_true", help="强制按 OBB 模型解析输出 (自动判断失败时使用)")
-    parser.add_argument("--tensorrt", action="store_true", help="启用 TensorRT 执行器 (需已安装 TensorRT 库)")
-    parser.add_argument("--no-warmup", action="store_true", help="跳过预热 (第一帧的耗时会包含GPU初始化开销)")
     return parser.parse_args()
 
 
@@ -59,15 +54,6 @@ def open_source(source):
     if not cap.isOpened():
         raise RuntimeError(f"无法打开视频源: {source}")
     return cap, is_camera
-
-
-def pick_model(model_arg):
-    if model_arg:
-        return Path(model_arg)
-    candidates = sorted(Path("models").glob("*.onnx"))
-    if not candidates:
-        return None
-    return candidates[0]
 
 
 def main():
@@ -102,8 +88,8 @@ def main():
     )
 
     # 输出视频: 摄像头实时源用时间戳命名, 文件源加 _detected 后缀
-    output_dir = Path(args.output)
-    output_dir.mkdir(parents=True, exist_ok=True)
+    output_dir = make_run_dir(args.output)
+    log.info("本次结果保存目录: %s", output_dir)
     if is_camera:
         import datetime
         stamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
@@ -143,10 +129,12 @@ def main():
                          frame_idx, int(m), s - int(m) * 60, infer_ms, len(detections))
                 log_detections(log, "    ", detections, detector.label_of)
 
-            writer.write(detector.annotate(frame, last_detections))
+            # 标注一次, 存视频和弹窗显示用同一份结果, 保证所见即所得
+            display = detector.annotate(frame, last_detections)
+            writer.write(display)
 
             if args.show:
-                cv2.imshow("YOLOv8 video - press 'q' to quit", frame)
+                cv2.imshow("YOLOv8 video - press 'q' to quit", display)
                 if cv2.waitKey(1) & 0xFF in (ord("q"), ord("Q"), 27):
                     stopped_early = True
                     log.info("用户手动停止")
@@ -157,7 +145,9 @@ def main():
     finally:
         cap.release()
         writer.release()
-        cv2.destroyAllWindows()
+        # 仅 --show(创建过窗口)时才需要销毁, headless 环境的 opencv 无 GUI 后端, 调用会报错
+        if args.show:
+            cv2.destroyAllWindows()
 
     wall_s = time.perf_counter() - t_start
     log.info("===== 汇总: 处理 %d 帧 (检测 %d 帧), 共 %d 个目标, 平均推理 %.1f ms/帧, "

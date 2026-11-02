@@ -8,4 +8,10 @@ results
 .env
 .env.local
 .vscode
+*.onnx
+*.pt
+*.jpg
+*.jpeg
+*.png
+*.mp4
 __pycache__

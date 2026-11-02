@@ -3,9 +3,9 @@
 Intel RealSense 相机录像保存脚本
 
 用法(在项目根目录执行):
-    python camera/capture_video.py [--folder 子文件夹名]
-    python camera/capture_video.py --folder phone_1027        # 保存到 videos/phone_1027
-    python camera/capture_video.py --serial 260322276473      # 多相机时按序列号指定相机
+    python scripts/capture_video.py [--folder 子文件夹名]
+    python scripts/capture_video.py --folder phone_1027        # 保存到 videos/phone_1027
+    python scripts/capture_video.py --serial 260322276473      # 多相机时按序列号指定相机
 
 --folder 为可选参数: 给出时视频保存到 videos/<folder>, 不给出时保存到 videos
 保存的文件名前缀自动取真实相机型号 (如 D405_, D455_)

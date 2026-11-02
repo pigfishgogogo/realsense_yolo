@@ -3,9 +3,9 @@
 Intel RealSense D455 相机拍照保存脚本
 
 用法(在项目根目录执行):
-    python camera/capture_image.py [--folder 子文件夹名]
-    python camera/capture_image.py --folder phone_1027        # 保存到 images/phone_1027
-    python camera/capture_image.py --serial 260322276473      # 多相机时按序列号指定相机
+    python scripts/capture_image.py [--folder 子文件夹名]
+    python scripts/capture_image.py --folder phone_1027        # 保存到 images/phone_1027
+    python scripts/capture_image.py --serial 260322276473      # 多相机时按序列号指定相机
 
 --folder 为可选参数: 给出时图片保存到 images/<folder>, 不给出时保存到 images
 保存的文件名前缀自动取真实相机型号 (如 D405_, D455_)

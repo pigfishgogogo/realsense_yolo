@@ -1,16 +1,16 @@
 # -*- coding: utf-8 -*-
 """
-YOLOv8 ONNX 图片精度评估脚本 (基于 onnxruntime)
+YOLOv8 ONNX 图片批量检测脚本 (基于 onnxruntime)
 
 功能:
     - 对指定目录(或单张)图片运行 YOLOv8 ONNX 推理
     - 控制台 + 日志文件输出每张图的识别结果(类别/置信度/坐标)
     - 保存画框后的识别效果图到 results 目录
 
-用法:
-    python image_evaluate.py                                  # 用 models/ 下第一个 onnx 模型评估 images/
-    python image_evaluate.py --model models/yolov8m.onnx --images images/
-    python image_evaluate.py --model models/yolov8m.onnx --images test.jpg --conf 0.5
+用法(在项目根目录执行):
+    python scripts/detect_images.py                                  # 用 models/ 下第一个 onnx 模型评估 images/
+    python scripts/detect_images.py --model models/yolov8m.onnx --images images/
+    python scripts/detect_images.py --model models/yolov8m.onnx --images test.jpg --conf 0.5
 """
 
 import argparse
@@ -19,41 +19,18 @@ from pathlib import Path
 
 import cv2
 
-from yolo_detector import IMG_EXTS, create_yolo_detector, load_names, log_detections, setup_logger
+sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
+from deploy_runtime.inference import collect_images, create_yolo_detector, load_names, log_detections, make_run_dir, pick_model, setup_logger
+from _common_args import add_detector_args
 
 
 def parse_args():
-    parser = argparse.ArgumentParser(description="YOLOv8 ONNX 图片精度评估")
-    parser.add_argument("--model", default=None, help="ONNX 模型路径 (默认取 models/ 下第一个 .onnx)")
+    parser = argparse.ArgumentParser(description="YOLOv8 ONNX 图片批量检测")
+    add_detector_args(parser, log_default="logs/detect.log")
     parser.add_argument("--images", default="images", help="图片目录或单张图片路径 (默认: images)")
-    parser.add_argument("--conf", type=float, default=0.25, help="置信度阈值 (默认: 0.25)")
-    parser.add_argument("--iou", type=float, default=0.45, help="NMS IOU 阈值 (默认: 0.45)")
-    parser.add_argument("--imgsz", type=int, default=None, help="模型输入尺寸 (默认取模型自身尺寸)")
-    parser.add_argument("--output", default="results", help="效果图保存目录 (默认: results)")
-    parser.add_argument("--log", default="logs/detect.log", help="日志文件路径 (默认: logs/detect.log)")
-    parser.add_argument("--names", default=None, help="类别名文件，每行一个 (默认使用 COCO 80 类)")
-    parser.add_argument("--obb", default=None, action="store_true", help="强制按 OBB 模型解析输出 (自动判断失败时使用)")
-    parser.add_argument("--tensorrt", action="store_true", help="启用 TensorRT 执行器 (需已安装 TensorRT 库)")
-    parser.add_argument("--no-warmup", action="store_true", help="跳过预热 (第一张图的耗时会包含GPU初始化开销)")
+    parser.add_argument("--output", default="results",
+                        help="效果图保存根目录 (默认: results, 每次运行在其下新建时间戳子目录)")
     return parser.parse_args()
-
-
-def pick_model(model_arg):
-    if model_arg:
-        return Path(model_arg)
-    candidates = sorted(Path("models").glob("*.onnx"))
-    if not candidates:
-        return None
-    return candidates[0]
-
-
-def collect_images(images_arg):
-    p = Path(images_arg)
-    if p.is_file():
-        return [p]
-    if p.is_dir():
-        return sorted(f for f in p.iterdir() if f.suffix.lower() in IMG_EXTS)
-    return []
 
 
 def main():
@@ -78,8 +55,8 @@ def main():
         sys.exit(1)
     log.info("共 %d 张测试图片", len(images))
 
-    output_dir = Path(args.output)
-    output_dir.mkdir(parents=True, exist_ok=True)
+    output_dir = make_run_dir(args.output)
+    log.info("本次结果保存目录: %s", output_dir)
 
     total_time, total_dets = 0.0, 0
 

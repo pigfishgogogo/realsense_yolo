@@ -3,9 +3,9 @@
 图片上下翻转工具 (绕水平轴翻转, 即上下颠倒)
 
 用法(在项目根目录执行):
-    python tools/flip_image.py --input images/test.jpg          # 单张
-    python tools/flip_image.py --input images/                  # 整个目录批量处理, 结果存 images/images_flipped/
-    python tools/flip_image.py --input images/ --output images/xxx/ --suffix _vflip
+    python scripts/flip_image.py --input images/test.jpg          # 单张
+    python scripts/flip_image.py --input images/                  # 整个目录批量处理, 结果存 images/images_flipped/
+    python scripts/flip_image.py --input images/ --output images/xxx/ --suffix _vflip
 """
 
 import argparse
@@ -15,7 +15,8 @@ from pathlib import Path
 
 import cv2
 
-IMG_EXTS = {".jpg", ".jpeg", ".png", ".bmp", ".webp"}
+sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
+from deploy_runtime.inference import collect_images
 
 
 def parse_args():
@@ -25,15 +26,6 @@ def parse_args():
                         help="结果保存目录 (默认: 单张存原图同目录, 目录批处理存 <input>/<input名>_flipped/)")
     parser.add_argument("--suffix", default="_flipped", help="输出文件名后缀 (默认: _flipped)")
     return parser.parse_args()
-
-
-def collect_images(input_arg):
-    p = Path(input_arg)
-    if p.is_file():
-        return [p]
-    if p.is_dir():
-        return sorted(f for f in p.iterdir() if f.suffix.lower() in IMG_EXTS)
-    return []
 
 
 def main():

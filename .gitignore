@@ -11,13 +11,13 @@ __pycache__
 *.pth
 *.whl
 models
-model_pt
 model_onnx
 model_fast-reid
 weights
 
 # ---- 数据与输出 ----
 images
+data_raw
 images_flipped
 videos
 results

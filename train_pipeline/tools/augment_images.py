@@ -11,16 +11,16 @@ from tqdm import tqdm
 source ~/yolo_venv/bin/activate
 
 # 1、默认: 只做增强，不重命名
-python ~/yolo/images/augment_images.py
+python ~/realsense_yolo/train_pipeline/tools/augment_images.py
 
 # 2、只做重命名, 从 0163.jpg/.txt 开始编号
-python ~/yolo/images/augment_images.py --mode rename --rename-start 163
+python ~/realsense_yolo/train_pipeline/tools/augment_images.py --mode rename --rename-start 163
 
 # 3、先增强, 再对输出目录统一重命名, 从 0001.jpg/.txt 开始
-python ~/yolo/images/augment_images.py --mode all --rename-start 1
+python ~/realsense_yolo/train_pipeline/tools/augment_images.py --mode all --rename-start 1
 
 # 4、自定义输入/输出目录（四个目录都有默认值, 按需覆盖）
-python ~/yolo/images/augment_images.py \
+python ~/realsense_yolo/train_pipeline/tools/augment_images.py \
   --src-img-dir /path/to/images --src-lbl-dir /path/to/labels \
   --out-img-dir /path/to/out --out-lbl-dir /path/to/out \
   --mode all --rename-start 1
@@ -28,10 +28,10 @@ python ~/yolo/images/augment_images.py \
 """
 
 # ============ 默认配置（均可用同名 --参数覆盖, 见 main）============
-src_img_dir = Path("~/yolo/images/phone_1027")
-src_lbl_dir = Path("~/yolo/images/phone_1027")
-out_img_dir = Path("~/yolo/datasets/phone_obb/temp")
-out_lbl_dir = Path("~/yolo/datasets/phone_obb/temp")
+src_img_dir = Path("~/realsense_yolo/train_pipeline/data_raw/phone_1027")
+src_lbl_dir = Path("~/realsense_yolo/train_pipeline/data_raw/phone_1027")
+out_img_dir = Path("~/realsense_yolo/train_pipeline/datasets/phone_obb/temp")
+out_lbl_dir = Path("~/realsense_yolo/train_pipeline/datasets/phone_obb/temp")
 AUG_PER_IMAGE = 1               # 每张原图增强生成的样本数
 MIN_VISIBLE_AREA_RATIO = 0.95  # 最小可见面积比例, 低于此比例的 OBB 会被丢弃
 # ==================================================================

@@ -5,19 +5,19 @@ from pathlib import Path
 
 """ @brief 将 raw 中的图片-标签对整体打乱后按 7:3 拆分到 train / val:
 # 0、进入yolo虚拟环境
-cd ~/yolo && source ~/yolo_venv/bin/activate
+source ~/yolo_venv/bin/activate
 
 # 1、默认：移动（raw 里的文件被搬走），随机种子 42
-python ~/yolo/images/split_dataset.py
+python ~/realsense_yolo/train_pipeline/tools/split_dataset.py
 
 # 2、只拷贝不移动，换随机种子
-python ~/yolo/images/split_dataset.py --copy --seed 7
+python ~/realsense_yolo/train_pipeline/tools/split_dataset.py --copy --seed 7
 
 # 3、预览拆分结果，不实际动文件
-python ~/yolo/images/split_dataset.py --dry-run
+python ~/realsense_yolo/train_pipeline/tools/split_dataset.py --dry-run
 
 # 4、自定义目录（五个路径都有默认值，按需覆盖，支持 ~ 简写）
-python ~/yolo/images/split_dataset.py \
+python ~/realsense_yolo/train_pipeline/tools/split_dataset.py \
   --raw-dir ~/data/raw --img-train-dir ~/data/images/train \
   --img-val-dir ~/data/images/val --lbl-train-dir ~/data/labels/train \
   --lbl-val-dir ~/data/labels/val
@@ -25,11 +25,11 @@ python ~/yolo/images/split_dataset.py \
 """
 
 # ============ 默认配置（均可用同名 --参数覆盖，见 main）============
-raw_dir = Path("~/yolo/datasets/phone_obb_raw/raw")
-img_train_dir = Path("~/yolo/datasets/phone_obb_raw/images/train")
-img_val_dir = Path("~/yolo/datasets/phone_obb_raw/images/val")
-lbl_train_dir = Path("~/yolo/datasets/phone_obb_raw/labels/train")
-lbl_val_dir = Path("~/yolo/datasets/phone_obb_raw/labels/val")
+raw_dir = Path("~/realsense_yolo/train_pipeline/datasets/phone_obb_raw/raw")
+img_train_dir = Path("~/realsense_yolo/train_pipeline/datasets/phone_obb_raw/images/train")
+img_val_dir = Path("~/realsense_yolo/train_pipeline/datasets/phone_obb_raw/images/val")
+lbl_train_dir = Path("~/realsense_yolo/train_pipeline/datasets/phone_obb_raw/labels/train")
+lbl_val_dir = Path("~/realsense_yolo/train_pipeline/datasets/phone_obb_raw/labels/val")
 VAL_RATIO = 0.3          # val 占比，train 为 1 - VAL_RATIO
 SEED = 42                # 随机种子，固定后每次拆分结果可复现
 # ==================================================================

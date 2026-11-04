@@ -17,16 +17,16 @@ from ultralytics import YOLO
 source ~/yolo_venv/bin/activate
 
 # 1、默认运行:相机 640x480, best.pt, conf 0.75, 浏览器打开 http://localhost:8000
-python ~/yolo/images/obbcam_demo.py
+python ~/realsense_yolo/train_pipeline/tools/obbcam_demo.py
 
 # 2、换端口/模型/置信度
-python ~/yolo/images/obbcam_demo.py --port 8080 \
-  --model ~/yolo/runs/obb/phone_obb_yolo26n/weights/best.pt --conf 0.4
+python ~/realsense_yolo/train_pipeline/tools/obbcam_demo.py --port 8080 \
+  --model ~/realsense_yolo/train_pipeline/runs/obb/phone_obb_yolo26n/weights/best.pt --conf 0.4
 
 按 Ctrl+C 结束。
 """
 
-MODEL = "~/yolo/runs/obb/phone_obb_yolo26n/weights/best.pt"
+MODEL = "~/realsense_yolo/train_pipeline/runs/obb/phone_obb_yolo26n/weights/best.pt"
 CAM_W, CAM_H, CAM_FPS = 640, 480, 30
 
 # 供 HTTP 线程读取的最新一帧(JPEG 字节)

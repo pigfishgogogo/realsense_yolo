@@ -8,9 +8,9 @@ YOLOv8 ONNX 图片批量检测脚本 (基于 onnxruntime)
     - 保存画框后的识别效果图到 results 目录
 
 用法(在项目根目录执行):
-    python scripts/detect_images.py                                  # 用 models/ 下第一个 onnx 模型评估 images/
-    python scripts/detect_images.py --model models/yolov8m.onnx --images images/
-    python scripts/detect_images.py --model models/yolov8m.onnx --images test.jpg --conf 0.5
+    python scripts/detect_image.py                                  # 用 models/ 下第一个 onnx 模型评估 images/
+    python scripts/detect_image.py --model models/yolov8m.onnx --images images/
+    python scripts/detect_image.py --model models/yolov8m.onnx --images test.jpg --conf 0.5
 """
 
 import argparse

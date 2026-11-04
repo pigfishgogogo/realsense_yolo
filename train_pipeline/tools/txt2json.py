@@ -5,21 +5,21 @@ from pathlib import Path
 """ @brief txt 转 JSON 用于 X-AnyLabeling 查看
 
 # 0、进入 yolo 虚拟环境
-cd ~/yolo && source ~/yolo_venv/bin/activate
+source ~/yolo_venv/bin/activate
 
 # 1、运行转换脚本
-python ~/yolo/images/txt2json.py \
-    --img-dir ~/yolo/datasets/phone_obb/temp \
-    --txt-dir ~/yolo/datasets/phone_obb/temp \
-    --out-dir ~/yolo/datasets/phone_obb/temp
+python ~/realsense_yolo/train_pipeline/tools/txt2json.py \
+    --img-dir ~/realsense_yolo/train_pipeline/datasets/phone_obb/temp \
+    --txt-dir ~/realsense_yolo/train_pipeline/datasets/phone_obb/temp \
+    --out-dir ~/realsense_yolo/train_pipeline/datasets/phone_obb/temp
 
 """
 
 CLASS_NAMES = ["phone"]
 # 图片和 txt 所在目录
-img_dir = Path("~/yolo/datasets/phone_obb/temp")
-txt_dir = Path("~/yolo/datasets/phone_obb/temp")  # 如果 txt 和图片同目录
-out_dir = Path("~/yolo/datasets/phone_obb/temp")
+img_dir = Path("~/realsense_yolo/train_pipeline/datasets/phone_obb/temp")
+txt_dir = Path("~/realsense_yolo/train_pipeline/datasets/phone_obb/temp")  # 如果 txt 和图片同目录
+out_dir = Path("~/realsense_yolo/train_pipeline/datasets/phone_obb/temp")
 
 def yolo_obb_txt_to_xany_json(txt_path, img_path, class_names, output_json_path):
     """
